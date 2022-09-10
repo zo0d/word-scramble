@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ContentView: View {
     
+    @State private var score = 0
+    
     @State private var usedWords = [String]()
     @State private var rootWord = ""
     @State private var newWord = ""
@@ -23,6 +25,11 @@ struct ContentView: View {
                 Section {
                     TextField("Enter your word", text: $newWord).autocapitalization(.none)
                 }
+                HStack {
+                    Spacer()
+                    Text("Score: \(score)").bold()
+                    Spacer()
+                }
                 Section {
                     ForEach(usedWords, id: \.self) { word in
                         HStack {
@@ -34,6 +41,15 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(rootWord)
+            .toolbar(content: {
+                ToolbarItemGroup {
+//                    Text("Score: \(score)").bold()
+//                    Spacer()
+                    Button("Restart") {
+                        startGame()
+                    }
+                }
+            })
             .onSubmit(addNewWord)
             .onAppear(perform: startGame)
             .alert(errorTitle, isPresented: $showingError) {
@@ -49,6 +65,8 @@ struct ContentView: View {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 let allWords = startWords.components(separatedBy: "\n")
                 rootWord = allWords.randomElement() ?? "silkworm"
+                score = 0
+                usedWords.removeAll()
                 return
             }
         }
@@ -58,7 +76,10 @@ struct ContentView: View {
     
     func addNewWord() {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard answer.count > 0 else { return }
+        guard answer.count > 3 else {
+            wordError(title: "Word too short", message: "Try again")
+            return
+        }
         
         guard isOriginal(word: answer) else {
             wordError(title: "Word used alread", message: "Be more original")
@@ -78,6 +99,7 @@ struct ContentView: View {
         withAnimation {
             usedWords.insert(answer, at: 0)
         }
+        score += 1 + newWord.count
         newWord = ""
     }
     
